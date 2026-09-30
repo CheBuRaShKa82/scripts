@@ -90,7 +90,7 @@ chmod +x secure-vps.sh install-docker.sh
 Запустите:
 
 ```bash
-sudo ./secure-vps-telegram-optional.sh
+sudo ./secure-vps.sh
 ```
 
 или:
