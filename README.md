@@ -77,7 +77,9 @@
 Скачайте репозиторий:
 
 ```bash
+```md
 git clone https://github.com/CheBuRaShKa82/scripts.git
+```
 cd scripts
 ```
 
@@ -308,13 +310,13 @@ net.ipv6.conf.default.accept_redirects = 0
 и подключает соответствующий официальный репозиторий:
 
 ```text
-https://download.docker.com/linux/ubuntu
+[https://download.docker.com/linux/ubuntu](https://download.docker.com/linux/ubuntu)
 ```
 
 или:
 
 ```text
-https://download.docker.com/linux/debian
+[https://download.docker.com/linux/debian](https://download.docker.com/linux/debian)
 ```
 
 ---
@@ -426,7 +428,7 @@ DOCKER-USER
 
 ---
 
-# 🖥️ Поддерживаемые системы
+# 🖥️️ Поддерживаемые системы
 
 Скрипты рассчитаны на:
 
@@ -556,4 +558,5 @@ sudo journalctl -u ssh.service
 
 Если скрипты оказались полезными — поставьте репозиторию ⭐.
 
+Pull Request и предложения по улучшению приветствуются.
 Pull Request и предложения по улучшению приветствуются.
