@@ -77,9 +77,7 @@
 Скачайте репозиторий:
 
 ```bash
-```md
 git clone https://github.com/CheBuRaShKa82/scripts.git
-```
 cd scripts
 ```
 
@@ -310,13 +308,13 @@ net.ipv6.conf.default.accept_redirects = 0
 и подключает соответствующий официальный репозиторий:
 
 ```text
-[https://download.docker.com/linux/ubuntu](https://download.docker.com/linux/ubuntu)
+https://download.docker.com/linux/ubuntu
 ```
 
 или:
 
 ```text
-[https://download.docker.com/linux/debian](https://download.docker.com/linux/debian)
+https://download.docker.com/linux/debian
 ```
 
 ---
@@ -359,7 +357,7 @@ sudo ./install-docker.sh
 7. создаст `/etc/apt/sources.list.d/docker.sources`;
 8. установит Docker Engine, Buildx и Compose Plugin;
 9. включит Docker через systemd;
-10. предложит добавить пользователя в группу `docker`;
+10. при интерактивном запуске через `sudo` предложит добавить пользователя в группу `docker`;
 11. покажет версии Docker и Docker Compose.
 
 ---
@@ -512,7 +510,7 @@ sudo fail2ban-client status sshd
 ### Docker
 
 ```bash
-docker ps
+sudo docker ps
 docker compose version
 sudo systemctl status docker
 ```
@@ -558,5 +556,4 @@ sudo journalctl -u ssh.service
 
 Если скрипты оказались полезными — поставьте репозиторию ⭐.
 
-Pull Request и предложения по улучшению приветствуются.
 Pull Request и предложения по улучшению приветствуются.
