@@ -18,12 +18,12 @@
 
 | Скрипт | Назначение |
 |---|---|
-| `secure-vps-telegram-optional.sh` | Интерактивная базовая защита VPS: пользователь, SSH, UFW, Fail2Ban, sysctl, Telegram и резервное копирование конфигов |
+| `secure-vps.sh` | Интерактивная базовая защита VPS: пользователь, SSH, UFW, Fail2Ban, sysctl, Telegram и резервное копирование конфигов |
 | `install-docker.sh` | Автоматическая установка Docker Engine, Buildx и Docker Compose Plugin для Ubuntu / Debian |
 
 ---
 
-# 🔐 secure-vps-telegram-optional.sh
+# 🔐 secure-vps.sh
 
 Скрипт выполняет первоначальную настройку безопасности нового VPS и старается снизить риск потери SSH-доступа во время изменений.
 
@@ -84,7 +84,7 @@ cd scripts
 Выдайте права на выполнение:
 
 ```bash
-chmod +x secure-vps-telegram-optional.sh install-docker.sh
+chmod +x secure-vps.sh install-docker.sh
 ```
 
 Запустите:
@@ -96,7 +96,7 @@ sudo ./secure-vps-telegram-optional.sh
 или:
 
 ```bash
-sudo bash secure-vps-telegram-optional.sh
+sudo bash secure-vps.sh
 ```
 
 ---
