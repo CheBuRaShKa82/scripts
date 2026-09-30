@@ -77,7 +77,6 @@
 Скачайте репозиторий:
 
 ```bash
-```md
 git clone https://github.com/CheBuRaShKa82/scripts.git
 ```
 cd scripts
