@@ -77,14 +77,14 @@
 Скачайте репозиторий:
 
 ```bash
-git clone https://github.com/CheBuRaShKa82/scripst.git
-cd REPOSITORY
+git clone https://github.com/CheBuRaShKa82/scripts.git
+cd scripts
 ```
 
 Выдайте права на выполнение:
 
 ```bash
-chmod +x secure-vps-telegram-optional.sh
+chmod +x secure-vps-telegram-optional.sh install-docker.sh
 ```
 
 Запустите:
@@ -351,12 +351,14 @@ sudo ./install-docker.sh
 1. определит Ubuntu или Debian;
 2. определит codename системы;
 3. определит архитектуру;
-4. установит `ca-certificates` и `curl`;
-5. добавит официальный GPG-ключ Docker;
-6. создаст `/etc/apt/sources.list.d/docker.sources`;
-7. установит Docker Engine;
-8. включит Docker через systemd;
-9. покажет версии Docker и Docker Compose.
+4. удалит потенциально конфликтующие неофициальные пакеты;
+5. установит `ca-certificates` и `curl`;
+6. добавит официальный GPG-ключ Docker;
+7. создаст `/etc/apt/sources.list.d/docker.sources`;
+8. установит Docker Engine, Buildx и Compose Plugin;
+9. включит Docker через systemd;
+10. предложит добавить пользователя в группу `docker`;
+11. покажет версии Docker и Docker Compose.
 
 ---
 
@@ -365,7 +367,7 @@ sudo ./install-docker.sh
 После установки:
 
 ```bash
-sudo docker run hello-world
+sudo docker run --rm hello-world
 ```
 
 Версия Docker:
@@ -472,7 +474,7 @@ sudo ./install-docker.sh
 ### 4. Проверить
 
 ```bash
-sudo docker run hello-world
+sudo docker run --rm hello-world
 sudo ufw status verbose
 sudo fail2ban-client status sshd
 ```
@@ -546,13 +548,7 @@ sudo journalctl -u ssh.service
 
 # 📄 License
 
-Вы можете добавить подходящую лицензию, например:
-
-- MIT;
-- Apache-2.0;
-- GPL-3.0.
-
-Если репозиторий публичный и вы хотите разрешить свободное использование и изменение скриптов, обычно удобно добавить файл `LICENSE`.
+Проект распространяется под лицензией [MIT](LICENSE).
 
 ---
 
