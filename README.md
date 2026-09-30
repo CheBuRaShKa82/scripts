@@ -78,7 +78,7 @@
 
 ```bash
 git clone https://github.com/CheBuRaShKa82/scripst.git
-cd REPOSITORY
+cd scripst
 ```
 
 Выдайте права на выполнение:
