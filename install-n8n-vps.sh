@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# n8n VPS installer v5.4 (Ubuntu 24.x/26.x, Debian 12/13)
+# n8n VPS installer v5.5 (Ubuntu 24.x/26.x, Debian 12/13)
 IFS=$'\n\t'
 umask 022
 APP_DIR="/opt/n8n"
@@ -131,6 +131,11 @@ install_docker(){
 
 collect_admin(){
   ADMIN_USER=""; ADMIN_PUBKEY=""; ADMIN_AUTH=""; ADMIN_PASS_INPUT=""
+  if sshd -T 2>/dev/null | grep -qx 'permitrootlogin no'; then
+    warn "Вход под root в SSH уже отключён (вероятно, запускался secure-vps.sh)."
+    warn "Создание нового пользователя пропущено: он не сможет войти из-за AllowUsers. Используйте существующего администратора."
+    return 0
+  fi
   ask_yes_no "Создать отдельного sudo-пользователя вместо работы под root (рекомендуется)?" y || return 0
   local u k p1 p2
   while true; do
@@ -224,9 +229,14 @@ collect_inputs(){
   
   mapfile -t CURRENT_SSH_PORTS < <(current_ssh_ports)
   ((${#CURRENT_SSH_PORTS[@]})) || CURRENT_SSH_PORTS=(22)
+  DEFAULT_SSH_PORT=5040
+  if ((${#CURRENT_SSH_PORTS[@]} == 1)) && [[ "${CURRENT_SSH_PORTS[0]}" != 22 ]]; then
+    DEFAULT_SSH_PORT="${CURRENT_SSH_PORTS[0]}"
+    ok "SSH уже работает на нестандартном порту ${CURRENT_SSH_PORTS[0]} — он предложен по умолчанию."
+  fi
   
   while true; do
-    read -r -p "Новый SSH-порт [5040]: " SSH_PORT; SSH_PORT="$(trim "$SSH_PORT")"; SSH_PORT="${SSH_PORT:-5040}"
+    read -r -p "Новый SSH-порт [$DEFAULT_SSH_PORT]: " SSH_PORT; SSH_PORT="$(trim "$SSH_PORT")"; SSH_PORT="${SSH_PORT:-$DEFAULT_SSH_PORT}"
     validate_port "$SSH_PORT" || { echo "Порт: 1024-65535, кроме 5432/5678."; continue; }
     [[ "$SSH_PORT" != 22 ]] || { echo "Порт 22 должен быть изменён."; continue; }
     if ! printf '%s\n' "${CURRENT_SSH_PORTS[@]}" | grep -Fxq "$SSH_PORT" && port_in_use "$SSH_PORT"; then echo "TCP/$SSH_PORT занят."; continue; fi
@@ -477,7 +487,9 @@ validate_stack(){
 
 configure_firewall_phase1(){
   local p
-  for p in "${CURRENT_SSH_PORTS[@]}"; do ufw allow "$p/tcp" comment "SSH old temporary"; done
+  for p in "${CURRENT_SSH_PORTS[@]}"; do
+    if [[ "$p" != "$SSH_PORT" ]]; then ufw allow "$p/tcp" comment "SSH old temporary"; fi
+  done
   ufw limit "$SSH_PORT/tcp" comment "SSH"
   ufw allow 80/tcp comment HTTP; ufw allow 443/tcp comment HTTPS; ufw allow 443/udp comment HTTP3
   ufw default deny incoming; ufw default allow outgoing; ufw --force enable
@@ -602,7 +614,7 @@ configure_ssh(){
   
   local ip; ip="$(public_ipv4)"; ip="${ip:-IP_СЕРВЕРА}"
   warn "Если в панели провайдера есть внешний файрвол — откройте в нём TCP/$SSH_PORT, TCP 80, TCP+UDP 443."
-  warn "Проверьте ВО ВТОРОМ окне: ssh -p $SSH_PORT ${ADMIN_USER:-root}@$ip"
+  warn "Проверьте ВО ВТОРОМ окне: ssh -p $SSH_PORT ${ADMIN_USER:-${SUDO_USER:-root}}@$ip"
   
   if ask_yes_no "Удалось успешно войти по новому SSH-порту?" n; then
     printf '# Managed by n8n installer\nPort %s\n' "$SSH_PORT" >"$SSH_DROPIN"
@@ -637,7 +649,11 @@ configure_ssh(){
 
 harden_ssh(){
   if [[ -z "$ADMIN_USER" ]]; then
-    warn "Отдельный пользователь не создан — вход под root в SSH НЕ отключён."
+    if sshd -T 2>/dev/null | grep -qx 'permitrootlogin no'; then
+      ok "Вход под root в SSH уже отключён — дополнительных действий не требуется."
+    else
+      warn "Отдельный пользователь не создан — вход под root в SSH НЕ отключён."
+    fi
     return 0
   fi
   local ip eff conf q; ip="$(public_ipv4)"; ip="${ip:-IP_СЕРВЕРА}"
@@ -687,15 +703,17 @@ install_backup_cron(){
 
 write_credentials(){
   local ip login sudo_line ssh_note
-  ip="$(public_ipv4)"; ip="${ip:-IP_СЕРВЕРА}"; login="${ADMIN_USER:-root}"
-  if [[ -z "$ADMIN_USER" ]]; then sudo_line="(отдельный пользователь не создавался, вход под root)"
+  ip="$(public_ipv4)"; ip="${ip:-IP_СЕРВЕРА}"; login="${ADMIN_USER:-${SUDO_USER:-root}}"
+  if [[ -z "$ADMIN_USER" && "$login" == root ]]; then sudo_line="(отдельный пользователь не создавался, вход под root)"
+  elif [[ -z "$ADMIN_USER" ]]; then sudo_line="(используется существующий пользователь $login; пароль не менялся)"
   elif [[ -n "$ADMIN_PASS" && "$ADMIN_AUTH" == key ]]; then sudo_line="$ADMIN_PASS   (нужен только для sudo; вход по SSH — по ключу)"
   elif [[ -n "$ADMIN_PASS" ]]; then sudo_line="$ADMIN_PASS   (для входа по SSH и для sudo)"
   else sudo_line="(пользователь существовал ранее — пароль не менялся)"; fi
   case "$HARDENED" in
     1) ssh_note="отключены вход по паролю и вход под root" ;;
     2) ssh_note="вход под root отключён; вход по паролю разрешён (защита: fail2ban)" ;;
-    *) ssh_note="НЕ применён (вход под root разрешён)" ;;
+    *) if sshd -T 2>/dev/null | grep -qx 'permitrootlogin no'; then ssh_note="вход под root отключён (настроено ранее, например secure-vps.sh)"
+       else ssh_note="НЕ применён (вход под root разрешён)"; fi ;;
   esac
   [[ ! -f "$CRED_FILE" ]] || { cp -a "$CRED_FILE" "$CRED_FILE.prev"; chmod 600 "$CRED_FILE.prev"; }
   ( umask 077; cat >"$CRED_FILE" <<EOF
@@ -759,7 +777,7 @@ post_checks(){
   done
   if (( https_ok )); then ok "HTTPS работает: https://$DOMAIN/"; else warn "HTTPS пока не подтверждён; проверьте DNS и: docker compose logs caddy"; fi
   printf '\nГОТОВО\nURL:        https://%s/\nSSH:        ssh -p %s %s@<IP>\nДоступы:    %s  (читать: sudo cat)\nExecutions: хранятся %s ч (EXECUTIONS_DATA_MAX_AGE в %s)\n\nПерезапуск: cd %s && docker compose restart\nОбновление: cd %s && docker compose pull && docker compose up -d\n' \
-    "$DOMAIN" "$SSH_PORT" "${ADMIN_USER:-root}" "$CRED_FILE" "$(grep '^EXECUTIONS_DATA_MAX_AGE=' "$ENV_FILE" | cut -d= -f2)" "$ENV_FILE" "$APP_DIR" "$APP_DIR"
+    "$DOMAIN" "$SSH_PORT" "${ADMIN_USER:-${SUDO_USER:-root}}" "$CRED_FILE" "$(grep '^EXECUTIONS_DATA_MAX_AGE=' "$ENV_FILE" | cut -d= -f2)" "$ENV_FILE" "$APP_DIR" "$APP_DIR"
   echo
   warn "СРАЗУ откройте https://$DOMAIN/ и создайте первый Owner-аккаунт n8n (User Management)."
   warn "Скопируйте $CRED_FILE в менеджер паролей и удалите файл с сервера. Бэкапы /var/backups храните также вне VPS."
